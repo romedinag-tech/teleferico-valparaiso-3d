@@ -17,6 +17,7 @@ la del prototipo del motor de diseño conceptual y los materiales son simplifica
 ## Fuentes y licencias
 Trazado y estaciones: Alternativa 1 «al eje de Av. Matta»; estaciones elevadas y rasante ajustada por el diseño conceptual. Terreno: Copernicus GLO-30 (© DLR e.V. y © Airbus Defence and Space, Copernicus/ESA), con textura esquemática (no es fotografía).
 Calles, costa y cobertura: © colaboradores de OpenStreetMap, bajo licencia ODbL (openstreetmap.org/copyright).
+Vía férrea: Red Ferroviaria, Biblioteca del Congreso Nacional (CC BY), dibujada ilustrativa.
 Modelos de ambientación: Kenney, Poly Haven y Quaternius (CC0). three.js (MIT).
 
 Rodrigo Medina González, 2026.
