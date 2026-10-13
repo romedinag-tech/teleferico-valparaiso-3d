@@ -37,6 +37,9 @@ label { display:flex; gap:8px; align-items:center; padding:2px 0; cursor:pointer
   <h2>Vistas</h2><div class="vistas" id="vistas"></div>
   <div id="caja_vuelo" hidden><h2>Vuelo</h2><div class="vistas"><button id="b_vuelo">▶ Vuelo en cabina, primera a última estación</button></div>
     <label>Velocidad <select id="v_vuelo"><option value="1">tiempo real (6 m/s)</option><option value="2.5" selected>× 2,5</option><option value="5">× 5</option></select></label></div>
+  <h2>Zoom</h2>
+  <label>Sensibilidad de la rueda <input id="zoom_sens" type="range" min="1" max="15" step="1" value="6"> <span id="zoom_sens_txt">6 %</span></label>
+  <div class="vistas"><button id="zoom_mas">＋ Acercar</button><button id="zoom_menos">－ Alejar</button></div>
   <h2>Ambiente</h2>
   <label>Hora <input id="hora" type="range" min="7" max="22.5" step="0.25" value="19.75"> <span id="hora_txt">19:45</span></label>
   <label id="caja_mov" hidden><input id="mov" type="checkbox" checked> Cabinas y autos en movimiento</label>
@@ -70,8 +73,42 @@ const ctl = new OrbitControls(camara, lienzo);
 ctl.enableDamping = true; ctl.dampingFactor = 0.12; ctl.screenSpacePanning = true; ctl.maxPolarAngle = Math.PI * 0.495;
 // rueda del mouse: zoom suave y hacia donde apunta el cursor (pedido de Rodrigo, 2026-10-13: con el valor por defecto
 // era muy sensible y se perdía la vista); con distancias mínima y máxima para no atravesar el suelo ni irse al infinito
-ctl.zoomSpeed = 0.35; ctl.zoomToCursor = true; ctl.minDistance = 4; ctl.maxDistance = 9000;
+ctl.enableZoom = false; ctl.minDistance = 4; ctl.maxDistance = 9000;
 const CAM_OK = { p: new THREE.Vector3(), t: new THREE.Vector3() };
+// Zoom propio (2026-10-13). El de OrbitControls (r160) fallaba: normaliza el giro dividiendo por (devicePixelRatio | 0),
+// que da 0 con el zoom del navegador bajo 100 % (salto infinito), y su zoom al cursor arrastra el centro de giro sin
+// límite si se apunta al cielo. Aquí: cada evento se normaliza (píxeles, líneas o páginas) y se topa; el acercamiento
+// se reparte en varios cuadros; se acerca hacia el punto bajo el cursor sobre el plano del centro de giro sólo si está a
+// menos de 3 veces la distancia actual, y si no, hacia el centro. Sensibilidad en el panel (% por giro), recordada.
+const ZOOM = { pend: 0, punto: new THREE.Vector3(), sens: 6 };
+try { const s = Number(localStorage.getItem("visor_zoom_sens")); if (s >= 1 && s <= 15) ZOOM.sens = s; } catch (e) { /* sin almacenamiento */ }
+const _ray = new THREE.Raycaster(), _ndc = new THREE.Vector2(), _plano = new THREE.Plane(), _hit = new THREE.Vector3();
+function puntoZoom(cx, cy) {
+  const r = lienzo.getBoundingClientRect();
+  _ndc.set(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1);
+  _ray.setFromCamera(_ndc, camara);
+  _plano.set(new THREE.Vector3(0, 0, 1), -ctl.target.z);
+  const d = camara.position.distanceTo(ctl.target);
+  if (_ray.ray.intersectPlane(_plano, _hit) && _hit.distanceTo(camara.position) < 3 * d) return _hit.clone();
+  return ctl.target.clone();
+}
+lienzo.addEventListener("wheel", e => {
+  e.preventDefault();
+  if (volando) return;
+  let d = e.deltaY * (e.deltaMode === 1 ? 33 : e.deltaMode === 2 ? 800 : 1);
+  d = Math.max(-150, Math.min(150, d));
+  ZOOM.pend += d / 100;   // en «giros» (un giro típico de rueda = 100 px)
+  ZOOM.punto.copy(puntoZoom(e.clientX, e.clientY));
+}, { passive: false });
+function pasoZoom() {
+  if (Math.abs(ZOOM.pend) < 0.005) return;
+  const paso = ZOOM.pend * 0.3; ZOOM.pend -= paso;
+  let f = Math.pow(1 - ZOOM.sens / 100, -paso);    // < 1 acerca, > 1 aleja
+  const d = camara.position.distanceTo(ctl.target);
+  f = Math.min(Math.max(f, ctl.minDistance / d), ctl.maxDistance / d);
+  camara.position.sub(ZOOM.punto).multiplyScalar(f).add(ZOOM.punto);
+  ctl.target.sub(ZOOM.punto).multiplyScalar(f).add(ZOOM.punto);
+}
 const hemi = new THREE.HemisphereLight(0xdfeaf7, 0x6b6250, 0.75);
 escena.add(hemi);
 const sol = new THREE.DirectionalLight(0xfff1dc, 2.2);
@@ -270,6 +307,11 @@ async function cargar() {
   const rot = { corredor: "Corredor completo", estacion_E4: "Estación E4", estacion_E4_cerca: "Estación E4, de cerca",
                 vano_P12P13: "Vano P12–P13", cabina_cerca: "Cabina de cerca", estacion_E1: "Estación E1",
                 estacion_E3: "Estación E3 (ángulo)", desde_E4: "Desde E4 hacia el mar" };
+  const zs = document.getElementById("zoom_sens"), zt = document.getElementById("zoom_sens_txt");
+  zs.value = ZOOM.sens; zt.textContent = ZOOM.sens + " %";
+  zs.oninput = () => { ZOOM.sens = Number(zs.value); zt.textContent = ZOOM.sens + " %"; try { localStorage.setItem("visor_zoom_sens", zs.value); } catch (e) { /* */ } };
+  document.getElementById("zoom_mas").onclick = () => { ZOOM.punto.copy(ctl.target); ZOOM.pend -= 2; };
+  document.getElementById("zoom_menos").onclick = () => { ZOOM.punto.copy(ctl.target); ZOOM.pend += 2; };
   const vb = document.getElementById("vistas");
   for (const [k, v] of Object.entries(META.vistas)) {
     const b = document.createElement("button");
@@ -303,7 +345,7 @@ async function cargar() {
   ponerSol(Number(document.getElementById("hora").value));
   ir(META.vistas.corredor || Object.values(META.vistas)[0]);
   document.getElementById("cargando").remove();
-  window.__visor = { escena, camara, ctl, render, grupos, triTotal, viva: { autos, cabs }, pasoViva, pasoVuelo, estado: () => ({ abordo, tSim, volando }), avanzar: (seg) => { tSim += seg; } };
+  window.__visor = { escena, camara, ctl, render, grupos, triTotal, viva: { autos, cabs }, pasoViva, pasoVuelo, pasoZoom, ZOOM, estado: () => ({ abordo, tSim, volando }), avanzar: (seg) => { tSim += seg; } };
 }
 let ruta = null, largo = 0, s = 0, volando = false, tPrev = 0;
 function armarVuelo() {
@@ -879,7 +921,7 @@ window.addEventListener("resize", tam); tam();
 const est = document.getElementById("estado");
 let n = 0, t0 = performance.now();
 render.setAnimationLoop((tt) => {
-  if (volando) pasoVuelo(performance.now()); else ctl.update();
+  if (volando) pasoVuelo(performance.now()); else { pasoZoom(); ctl.update(); }
   // protección: si la cámara queda en un valor inválido (p. ej. zoom al cursor sin puntero), vuelve a la última buena
   if (!Number.isFinite(camara.position.x + camara.position.y + camara.position.z + ctl.target.x + ctl.target.y + ctl.target.z)) {
     camara.position.copy(CAM_OK.p); ctl.target.copy(CAM_OK.t); ctl.update();
