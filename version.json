@@ -1,1 +1,1 @@
-{"version": 7, "fecha": "2026-10-13", "origen": "salidas/visor_3d_v7.html", "cambios": "mar extendido 40 km hacia el horizonte por los bordes de agua de la caja (antes se veía el plano de tierra beige al fondo)"}
+{"version": 8, "fecha": "2026-10-15", "origen": "salidas/visor_3d_v7.html", "cambios": "pagina de comparacion sentinel2.html: imagen Sentinel-2 (23-12-2025) con calles OSM en el recorte y contexto lejano de Laguna Verde a Vina centro; index.html sin cambios"}
