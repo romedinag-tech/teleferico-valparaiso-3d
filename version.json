@@ -1,1 +1,1 @@
-{"version": 8, "fecha": "2026-10-15", "origen": "salidas/visor_3d_v7.html", "cambios": "pagina de comparacion sentinel2.html: imagen Sentinel-2 (23-12-2025) con calles OSM en el recorte y contexto lejano de Laguna Verde a Vina centro; index.html sin cambios"}
+{"version": 9, "fecha": "2026-10-15", "origen": "salidas/visor_3d_v7_contexto_sentinel2.html", "cambios": "Sentinel-2 + contexto lejano pasa a index.html (decision de Rodrigo); la textura esquematica anterior queda en el historial de git"}
