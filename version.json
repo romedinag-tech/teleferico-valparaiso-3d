@@ -1,1 +1,1 @@
-{"version": 9, "fecha": "2026-10-15", "origen": "salidas/visor_3d_v7_contexto_sentinel2.html", "cambios": "Sentinel-2 + contexto lejano pasa a index.html (decision de Rodrigo); la textura esquematica anterior queda en el historial de git"}
+{"version": 10, "fecha": "2026-10-24", "origen": "salidas/visor_3d_v8_realismo.html", "cambios": "visor de realismo al nivel de Chiguayante; la v9 queda en anterior.html"}
