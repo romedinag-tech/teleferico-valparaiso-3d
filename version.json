@@ -1,1 +1,1 @@
-{"version": 10, "fecha": "2026-10-24", "origen": "salidas/visor_3d_v8_realismo.html", "cambios": "visor de realismo al nivel de Chiguayante; la v9 queda en anterior.html"}
+{"version": 11, "fecha": "2026-10-24", "origen": "salidas/visor_3d_v8_realismo.html; anterior.html = v10", "cambios": "revision externa de realismo aplicada al motor: sombreado del follaje, rodales, suelo del bosque, noche (vidrios, luna), copas en cerros lejanos, niebla segun altura, despeje de estaciones, vistas y rutas; grabacion de video robusta a cuelgues de la GPU"}
